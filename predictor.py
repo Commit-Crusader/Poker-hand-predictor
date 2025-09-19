@@ -3,6 +3,7 @@
 import itertools
 from card import create_deck
 from evaluator import evaluate_hand, get_hand_name
+from monte_carlo import predict_hands_monte_carlo, auto_choose_method
 
 def predict_hands(community_cards, pocket_hands):
     """Calculate win probabilities for all players"""
@@ -196,3 +197,18 @@ def evaluate_best_partial_hand(cards):
             if rank > best_rank:
                 best_rank = rank
         return best_rank
+
+def predict_hands_with_method(community_cards, pocket_hands, method="exhaustive"):
+    """Unified interface for predicting hands with chosen method"""
+    if method == "monte_carlo":
+        # Monte Carlo (10k sims default)
+        return predict_hands_monte_carlo(community_cards, pocket_hands, 25000)
+    elif method == "auto":
+        # Auto decide based on stage and speed preference
+        results, _ = auto_choose_method(community_cards, pocket_hands, "balanced")
+        return results
+    else:
+        # Default to exhaustive - use the detailed version
+        return predict_hands_with_current(community_cards, pocket_hands)
+
+
