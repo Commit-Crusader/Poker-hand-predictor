@@ -1,12 +1,36 @@
 # game.py - Game flow and user interaction
 
 from card import parse_card
-from predictor import predict_hands, predict_hands_with_current
-from utils import display_results, display_results_with_current_hand, print_header, print_section
+from predictor import predict_hands, predict_hands_with_method
+from utils import display_results, display_results_with_current_hand, display_enhanced_results, print_header, print_section
 
 def run_game():
     """Main game flow with looping"""
     print_header()
+
+    print("\nChoose prediction method:")
+    print("1. Always Exhaustive (most accurate, slower for flop)")
+    print("2. Always Monte Carlo (fast, ~99% accurate)")  
+    print("3. Auto-selection (smart balance - recommended)")
+    print("4. Custom per stage (choose method for each flop/turn)")
+    method_choice = input("> ").strip()
+    
+    print("\nChoose display style:")
+    print("1. Basic results (simple win percentages)")
+    print("2. Enhanced analysis (hand breakdowns + strategy insights)")
+    display_choice = input("> ").strip()
+    
+    enhanced_display = display_choice == "2"
+
+    if method_choice == "1":
+        method = "exhaustive"
+    elif method_choice == "2":
+        method = "monte_carlo"
+    elif method_choice == "3":
+        method = "auto"
+    else:
+        method = "custom"
+
     
     while True:
         # Always 6 players
@@ -17,7 +41,13 @@ def run_game():
         
         print_section("All players entered!")
         
+        """# PRE-FLOP PREDICTION
+        print("\nCalculating pre-flop probabilities...")
+        preflop_predictions = predict_hands([], pocket_hands)
+        display_results(preflop_predictions, [], "PRE-FLOP")
         
+        print_section("Now let's deal the community cards...")
+        """
         # Step 2: Get FLOP (3 cards one by one)
         community_cards = []
         print("\nEnter FLOP cards one at a time:")
@@ -34,20 +64,62 @@ def run_game():
         used_cards.add(flop3)
         community_cards.append(flop3)
         
-        # Step 3: Calculate after FLOP with current hand info
-        print("\nCalculating probabilities after FLOP...")
-        predictions = predict_hands_with_current(community_cards, pocket_hands)
-        display_results_with_current_hand(predictions, community_cards, "FLOP")
+        # Step 3: Calculate after FLOP with chosen method
+        if method == "custom":
+            print("\nChoose method for FLOP analysis:")
+            print("1. Exhaustive (most accurate, ~1-2 seconds)")
+            print("2. Monte Carlo (fast, ~1 second)")  
+            print("3. Auto-select (recommended)")
+            flop_choice = input("> ").strip()
+            
+            if flop_choice == "1":
+                flop_method = "exhaustive"
+            elif flop_choice == "2":
+                flop_method = "monte_carlo"
+            else:
+                flop_method = "auto"
+        else:
+            flop_method = method
+            
+        print(f"\nCalculating probabilities after FLOP using {flop_method.upper()} method...")
+        predictions = predict_hands_with_method(community_cards, pocket_hands, flop_method)
+        
+        if enhanced_display:
+            display_enhanced_results(predictions, community_cards, "FLOP")
+        else:
+            display_results_with_current_hand(predictions, community_cards, "FLOP")
+
         
         # Step 4: Get TURN (4th card)
         turn_card = get_single_card("Enter the TURN card (e.g., 10C):", used_cards)
         used_cards.add(turn_card)
         community_cards.append(turn_card)
         
-        # Step 5: Recalculate after TURN with current hand info
-        print("\nRecalculating probabilities after TURN...")
-        predictions = predict_hands_with_current(community_cards, pocket_hands)
-        display_results_with_current_hand(predictions, community_cards, "TURN")
+        # Step 5: Recalculate after TURN
+        if method == "custom":
+            print("\nChoose method for TURN analysis:")
+            print("1. Exhaustive (most accurate, instant)")
+            print("2. Monte Carlo (also fast for turn)")  
+            print("3. Auto-select (recommended - will pick exhaustive)")
+            turn_choice = input("> ").strip()
+            
+            if turn_choice == "1":
+                turn_method = "exhaustive"
+            elif turn_choice == "2":
+                turn_method = "monte_carlo"
+            else:
+                turn_method = "auto"
+        else:
+            turn_method = method
+            
+        print(f"\nRecalculating probabilities after TURN using {turn_method.upper()} method...")
+        predictions = predict_hands_with_method(community_cards, pocket_hands, turn_method)
+        
+        if enhanced_display:
+            display_enhanced_results(predictions, community_cards, "TURN")
+        else:
+            display_results_with_current_hand(predictions, community_cards, "TURN")
+
         
         # Step 6: Optional RIVER
         print("Want to see the RIVER? (y/n):")
@@ -59,8 +131,12 @@ def run_game():
             community_cards.append(river_card)
             
             print("\nFinal results after RIVER...")
-            predictions = predict_hands_with_current(community_cards, pocket_hands)
-            display_results_with_current_hand(predictions, community_cards, "RIVER")
+            predictions = predict_hands_with_method(community_cards, pocket_hands)
+            
+            if enhanced_display:
+                display_enhanced_results(predictions, community_cards, "RIVER")
+            else:
+                display_results_with_current_hand(predictions, community_cards, "RIVER")
         
         print("\nThanks for using Texas Hold'em Predictor!")
         
