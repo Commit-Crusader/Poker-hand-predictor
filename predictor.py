@@ -67,7 +67,7 @@ def predict_hands(community_cards, pocket_hands):
     return sorted(results, key=lambda x: x['win_probability'], reverse=True)
 
 def predict_hands_with_current(community_cards, pocket_hands):
-    """Calculate win probabilities AND show current hand for each player"""
+    """Calculate win probabilities AND show current hand + most likely future hand for each player"""
     
     # Get all used cards
     used_cards = set(community_cards)
@@ -88,10 +88,21 @@ def predict_hands_with_current(community_cards, pocket_hands):
     for i, pocket in enumerate(pocket_hands):
         wins = 0.0
         total_simulations = 0
+        hand_type_counts = {}  # Track hand types and their frequency
         
         # Try all possible future boards
         for future_cards in itertools.combinations(remaining_deck, cards_needed):
             full_community = community_cards + list(future_cards)
+            
+            # Evaluate this player's hand for this scenario
+            cards_tuple = tuple(pocket + full_community)
+            player_rank = evaluate_hand(cards_tuple)
+            hand_type_name = get_hand_name(player_rank)
+            
+            # Count this hand type
+            if hand_type_name not in hand_type_counts:
+                hand_type_counts[hand_type_name] = 0
+            hand_type_counts[hand_type_name] += 1
             
             # Evaluate all players for this scenario
             player_ranks = []
@@ -123,13 +134,35 @@ def predict_hands_with_current(community_cards, pocket_hands):
             # Pre-flop or no cards
             current_hand_rank = None
         
+        # Find most common hand type and build breakdown
+        most_common_hand = None
+        most_common_percentage = 0
+        hand_breakdown = {}
+        
+        if hand_type_counts:
+            # Sort hand types by frequency (most common first)
+            sorted_hands = sorted(hand_type_counts.items(), key=lambda x: x[1], reverse=True)
+            
+            # Get most common
+            most_common_hand = sorted_hands[0][0]
+            most_common_percentage = (sorted_hands[0][1] / total_simulations) * 100
+            
+            # Build breakdown for top 3 most common hands
+            for hand_name, count in sorted_hands[:3]:
+                percentage = (count / total_simulations) * 100
+                hand_breakdown[hand_name] = percentage
+        
         win_percentage = (wins / total_simulations) * 100
         results.append({
             'player': i + 1,
             'pocket': pocket,
             'win_probability': win_percentage,
             'simulations': total_simulations,
-            'current_hand': current_hand_rank
+            'current_hand': current_hand_rank,
+            'most_likely_hand': most_common_hand,
+            'most_likely_percentage': most_common_percentage,
+            'hand_breakdown': hand_breakdown,  # Top 3 hands
+            'all_hand_types': hand_type_counts  # Keep full breakdown for reference
         })
     
     return sorted(results, key=lambda x: x['win_probability'], reverse=True)
