@@ -301,9 +301,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📧 Contact
 
-Your Name - [@yourusername](https://github.com/yourusername)
+Your Name - [@Commit-Crusader](https://github.com/Commit-Crusader)
 
-Project Link: [https://github.com/yourusername/poker-hand-predictor](https://github.com/yourusername/poker-hand-predictor)
+Project Link: [https://github.com/Commit-Crusader/poker-hand-predictor](https://github.com/Commit-Crusader/poker-hand-predictor)
 
 ---
 
